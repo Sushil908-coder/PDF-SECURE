@@ -353,8 +353,16 @@ async function loadPDF() {
     return;
   }
 
-  const loadingTask = pdfjsLib.getDocument(pdf.fileUrl);
-  pdfDoc = await loadingTask.promise;
+const loadingTask = pdfjsLib.getDocument({
+  url: pdf.fileUrl,
+
+  // 🔥 FAST SETTINGS
+  useWorkerFetch: true,
+  isEvalSupported: false,
+  disableStream: false,
+  disableAutoFetch: false,
+  rangeChunkSize: 65536
+});
 
   renderPage(currentPage);
 }
@@ -419,6 +427,10 @@ document.addEventListener("touchstart", e => {
     e.preventDefault();
   }
 }, { passive: false });
+
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
   </script>
 

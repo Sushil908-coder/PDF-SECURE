@@ -33,7 +33,8 @@ const uploadPDF = async (req, res) => {
 
     // 🔥 Upload to Cloudinary (CORRECT PLACE)
     const result = await cloudinary.uploader.upload(file.path, {
-      resource_type: "auto",
+      resource_type: "raw",
+      type: "upload",
       folder: "pdf-notes",
       use_filename: true,
       unique_filename: false

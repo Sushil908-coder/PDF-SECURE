@@ -6,6 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const PDF = require('../models/PDF');
+const cloudinary = require('../config/cloudinary');
 const AccessLog = require('../models/AccessLog');
 
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
@@ -24,20 +25,30 @@ const uploadPDF = async (req, res) => {
     const { title, description, category } = req.body;
 
     if (!title || !title.trim()) {
-      // Delete uploaded file if title missing
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'PDF title is required.' });
     }
 
+    // 🔥 Upload to Cloudinary (CORRECT PLACE)
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "raw",
+      folder: "pdf-notes"
+    });
+
+    // 🔥 Save in DB
     const pdf = await PDF.create({
       title: title.trim(),
       description: (description || '').trim(),
       category: (category || 'General').trim(),
       originalName: req.file.originalname,
-      filename: req.file.filename,
+      fileUrl: result.secure_url,
+      public_id: result.public_id,
       fileSize: req.file.size,
       uploadedBy: req.user._id
     });
+
+    // 🔥 Delete local file
+    fs.unlinkSync(req.file.path);
 
     res.status(201).json({
       success: true,
@@ -50,16 +61,17 @@ const uploadPDF = async (req, res) => {
         createdAt: pdf.createdAt
       }
     });
+
   } catch (err) {
     console.error('uploadPDF error:', err);
-    // Clean up file if DB save failed
+
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
+
     res.status(500).json({ success: false, message: 'Failed to upload PDF.' });
   }
 };
-
 // ─── List PDFs ────────────────────────────────────────────────────────────────
 
 /**

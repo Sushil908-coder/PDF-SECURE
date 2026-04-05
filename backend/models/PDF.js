@@ -29,11 +29,15 @@ const pdfSchema = new mongoose.Schema({
   },
 
   // Server-side filename (UUID-based, not guessable)
-  filename: {
-    type: String,
-    required: true,
-    unique: true
-  },
+fileUrl: {
+  type: String,
+  required: true
+},
+
+public_id: {
+  type: String,
+  required: true
+},
 
   // File size in bytes
   fileSize: {

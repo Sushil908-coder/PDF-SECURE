@@ -332,54 +332,65 @@
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const pdfId = params.get("id");
+   const params = new URLSearchParams(window.location.search);
+const pdfId = params.get("id");
 
-    async function loadPDF() {
-      const res = await fetch('/api/pdf/list', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+let pdfDoc = null;
+let currentPage = 1;
 
-      const data = await res.json();
-      const pdf = data.pdfs.find(p => p._id === pdfId);
-
-      if (!pdf) {
-        alert("PDF not found ❌");
-        return;
-      }
-
-      const url = pdf.fileUrl;
-
-      const loadingTask = pdfjsLib.getDocument(url);
-      const pdfDoc = await loadingTask.promise;
-
-      const container = document.getElementById("pdfContainer");
-      container.innerHTML = "";
-
-      // 🔥 ALL PAGES LOOP
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-
-        const viewport = page.getViewport({ scale: 1.5 });
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-
-        container.appendChild(canvas);
-      }
+async function loadPDF() {
+  const res = await fetch('/api/pdf/list', {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
+  });
 
-    loadPDF();
+  const data = await res.json();
+  const pdf = data.pdfs.find(p => p._id === pdfId);
+
+  if (!pdf) {
+    alert("PDF not found ❌");
+    return;
+  }
+
+  const loadingTask = pdfjsLib.getDocument(pdf.fileUrl);
+  pdfDoc = await loadingTask.promise;
+
+  renderPage(currentPage);
+}
+
+async function renderPage(pageNum) {
+  const page = await pdfDoc.getPage(pageNum);
+
+  const container = document.getElementById("pdfContainer");
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  const viewport = page.getViewport({ scale: 1 });
+
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+
+  await page.render({
+    canvasContext: context,
+    viewport: viewport
+  }).promise;
+
+  container.appendChild(canvas);
+}
+
+// 🔥 SCROLL LOAD (MOBILE FIX)
+window.addEventListener("scroll", async () => {
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+    if (pdfDoc && currentPage < pdfDoc.numPages) {
+      currentPage++;
+      await renderPage(currentPage);
+    }
+  }
+});
+
+loadPDF();
   </script>
 
 </body>

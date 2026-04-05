@@ -234,7 +234,6 @@ body {
   </style>
 </head>
 <body>
-<div id="watermark"></div>
   <!-- Security overlay (disrupts screen recording) -->
   <div class="security-overlay"></div>
 
@@ -521,13 +520,13 @@ document.addEventListener("keydown", function(e) {
 
 
 // 👀 Tab switch blur
-document.addEventListener("visibilitychange", function() {
-  if (document.hidden) {
-    document.body.style.filter = "blur(10px)";
-  } else {
-    document.body.style.filter = "none";
-  }
-});
+// document.addEventListener("visibilitychange", function() {
+//   if (document.hidden) {
+//     document.body.style.filter = "blur(10px)";
+//   } else {
+//     document.body.style.filter = "none";
+//   }
+// });
 
 
 // 🚫 Right click disable

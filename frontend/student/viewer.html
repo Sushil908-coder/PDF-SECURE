@@ -367,7 +367,10 @@ async function renderPage(pageNum) {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
-  const viewport = page.getViewport({ scale: 1 });
+// 🔥 MOBILE OPTIMIZATION
+const scale = window.innerWidth < 600 ? 1 : 1.5;
+
+const viewport = page.getViewport({ scale });
 
   canvas.height = viewport.height;
   canvas.width = viewport.width;
@@ -380,7 +383,7 @@ async function renderPage(pageNum) {
   container.appendChild(canvas);
 }
 
-// 🔥 SCROLL LOAD (MOBILE FIX)
+// 🔥 LAZY LOAD (SCROLL)
 window.addEventListener("scroll", async () => {
   if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
     if (pdfDoc && currentPage < pdfDoc.numPages) {

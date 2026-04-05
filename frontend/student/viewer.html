@@ -407,8 +407,10 @@ async function loadPDF() {
     return;
   }
 
-  // 🔥 DIRECT BACKEND STREAM
-  window.location.href = `/api/pdf/stream/${pdfId}`;
+  const token = localStorage.getItem("token");
+
+  // 🔥 FINAL WORKING LINE
+  window.location.href = `/api/pdf/stream/${pdfId}?token=${token}`;
 }
     
 

@@ -316,86 +316,84 @@
     </div>
   </div>
 
-  <iframe id="pdfFrame" 
-        style="width:100%; height:100vh; border:none;"
-        sandbox="allow-scripts allow-same-origin">
-</iframe>
+  <iframe id="pdfFrame" style="width:100%; height:100vh; border:none;">
+  </iframe>
 
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
   <script>
-// ================= AUTH CHECK =================
-(function () {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/';
-  }
-})();
+    // ================= AUTH CHECK =================
+    (function () {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/';
+      }
+    })();
 
-// ================= GET PDF ID =================
-const params = new URLSearchParams(window.location.search);
-const pdfId = params.get("id");
+    // ================= GET PDF ID =================
+    const params = new URLSearchParams(window.location.search);
+    const pdfId = params.get("id");
 
-// ================= LOAD PDF =================
-async function loadPDF() {
-  if (!pdfId) {
-    alert("PDF ID missing ❌");
-    return;
-  }
+    // ================= LOAD PDF =================
+    async function loadPDF() {
+      if (!pdfId) {
+        alert("PDF ID missing ❌");
+        return;
+      }
 
-  try {
-    const res = await fetch('/api/pdf/list', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      try {
+        const res = await fetch('/api/pdf/list', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const data = await res.json();
+
+        const pdf = data.pdfs.find(p => p._id === pdfId);
+
+        if (!pdf) {
+          alert("PDF not found ❌");
+          return;
+        }
+
+        // 🔥 iframe me show karna
+        const iframe = document.getElementById("pdfFrame");
+        iframe.src = pdf.fileUrl;
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load PDF ❌");
+      }
+    }
+
+    // ================= SECURITY =================
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', e => {
+      if (
+        (e.ctrlKey && ['s', 'p', 'u', 'a', 'c', 'x'].includes(e.key.toLowerCase())) ||
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))
+      ) {
+        e.preventDefault();
       }
     });
 
-    const data = await res.json();
-
-    const pdf = data.pdfs.find(p => p._id === pdfId);
-
-    if (!pdf) {
-      alert("PDF not found ❌");
-      return;
+    // ================= WATERMARK =================
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.userId) {
+      setInterval(() => {
+        const time = new Date().toLocaleTimeString();
+        document.getElementById('watermark').innerText =
+          `${user.userId} | ${time}`;
+      }, 1000);
     }
 
-    // 🔥 iframe me show karna
-    const iframe = document.getElementById("pdfFrame");
-    iframe.src = pdf.fileUrl;
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load PDF ❌");
-  }
-}
-
-// ================= SECURITY =================
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-document.addEventListener('keydown', e => {
-  if (
-    (e.ctrlKey && ['s','p','u','a','c','x'].includes(e.key.toLowerCase())) ||
-    e.key === 'F12' ||
-    (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()))
-  ) {
-    e.preventDefault();
-  }
-});
-
-// ================= WATERMARK =================
-const user = JSON.parse(localStorage.getItem('user') || '{}');
-if (user.userId) {
-  setInterval(() => {
-    const time = new Date().toLocaleTimeString();
-    document.getElementById('watermark').innerText =
-      `${user.userId} | ${time}`;
-  }, 1000);
-}
-
-// ================= START =================
-loadPDF();
+    // ================= START =================
+    loadPDF();
   </script>
-  
+
 </body>
 
 </html>

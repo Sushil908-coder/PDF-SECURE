@@ -396,6 +396,30 @@ container.addEventListener("scroll", async () => {
 });
 
 loadPDF();
+
+
+// 🔥 Screenshot / tab switch detect
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    document.body.style.filter = "blur(20px)";
+  } else {
+    document.body.style.filter = "none";
+  }
+});
+
+setInterval(() => {
+  document.body.style.opacity = "0.97";
+  setTimeout(() => {
+    document.body.style.opacity = "1";
+  }, 100);
+}, 2000);
+
+document.addEventListener("touchstart", e => {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
   </script>
 
 </body>

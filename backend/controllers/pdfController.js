@@ -104,27 +104,24 @@ const deletePDF = async (req, res) => {
     const pdf = await PDF.findById(req.params.id);
 
     if (!pdf) {
-      return res.status(404).json({ success: false, message: 'PDF not found.' });
+      return res.status(404).json({ success: false });
     }
 
+    // 🔥 New PDF (Cloudinary)
     if (pdf.public_id) {
       await cloudinary.uploader.destroy(pdf.public_id, {
         resource_type: "raw"
       });
     }
 
-    // 🔥 Delete from Cloudinary
-    await cloudinary.uploader.destroy(pdf.public_id, {
-      resource_type: "raw"
-    });
-
+    // 🔥 Old PDF (skip cloudinary)
     await PDF.findByIdAndDelete(req.params.id);
 
-    res.json({ success: true, message: `"${pdf.title}" deleted successfully.` });
+    res.json({ success: true });
 
   } catch (err) {
-    console.error('deletePDF error:', err);
-    res.status(500).json({ success: false, message: 'Failed to delete PDF.' });
+    console.error("Delete Error:", err);
+    res.status(500).json({ success: false });
   }
 };
 
@@ -160,6 +157,9 @@ const togglePDF = async (req, res) => {
  */
 const streamPDF = async (req, res) => {
   try {
+    if (!req.params.id || req.params.id === "undefined") {
+      return res.status(400).json({ message: "Invalid PDF ID" });
+    }
     const pdf = await PDF.findById(req.params.id);
     if (!pdf) {
       return res.status(404).json({ success: false, message: 'PDF not found.' });

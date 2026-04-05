@@ -327,7 +327,146 @@
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
   <script>
+    // ── Auth guard ─────────────────────────────────────────────────────────
+    (function () {
+      const token = localStorage.getItem('token');
+      if (!token) window.location.href = '/';
+    })();
+
   
+    const urlParams = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
+const pdfId = params.get("id");
+
+console.log("PDF ID:", pdfId);
+
+if (!pdfId) {
+  alert("PDF ID not found ❌");
+}
+
+    // ── Security measures ──────────────────────────────────────────────────
+    // Disable right-click everywhere
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Disable keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      const blocked = [
+        e.ctrlKey && 's', e.ctrlKey && 'p', e.ctrlKey && 'u',
+        e.ctrlKey && 'a', e.ctrlKey && 'c', e.ctrlKey && 'x',
+        e.key === 'F12',
+        e.ctrlKey && e.shiftKey && 'i',
+        e.ctrlKey && e.shiftKey && 'j',
+        e.ctrlKey && e.shiftKey && 'c',
+        e.key === 'PrintScreen'
+      ];
+      if (blocked.some(Boolean)) e.preventDefault();
+    });
+
+    // PrintScreen key → blur
+    document.addEventListener('keyup', e => {
+      if (e.key === 'PrintScreen') {
+        document.getElementById('blurOverlay').classList.add('show');
+        setTimeout(() => document.getElementById('blurOverlay').classList.remove('show'), 3000);
+      }
+    });
+
+    // Tab switch → blur content
+    document.addEventListener('visibilitychange', () => {
+      const overlay = document.getElementById('blurOverlay');
+      if (document.hidden) {
+        overlay.classList.add('show');
+      } else {
+        setTimeout(() => overlay.classList.remove('show'), 500);
+      }
+    });
+
+    // Prevent drag
+    document.addEventListener('dragstart', e => e.preventDefault());
+
+    // ── Watermark with user ID ─────────────────────────────────────────────
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.userId) {
+      document.getElementById('watermark').textContent =
+        `${user.userId} · PDF Notes Platform · ${user.userId}`;
+    }
+
+    // ── Load PDF ───────────────────────────────────────────────────────────
+async function loadPDF() {
+  if (!pdfId) {
+    alert("PDF ID missing ❌");
+    return;
+  }
+
+  try {
+    const data = await API.get('/api/pdf/list');
+
+    const pdf = data.pdfs.find(p => p._id === pdfId);
+
+    if (!pdf) {
+      alert("PDF not found ❌");
+      return;
+    }
+
+    // 🔥 DIRECT OPEN (FINAL FIX)
+    window.open(pdf.fileUrl, "_self");
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load PDF ❌");
+  }
+}
+    // ── Keyboard navigation ────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changePage(-1);
+    });
+
+    // ── Touch/swipe support ────────────────────────────────────────────────
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) changePage(diff > 0 ? 1 : -1);
+    });
+
+    // ── Fetch PDF title ────────────────────────────────────────────────────
+    async function fetchTitle() {
+      try {
+        const res = await API.get('/api/pdf/list');
+        if (!res) return;
+        const data = await res.json();
+        if (data.success) {
+          const pdf = data.pdfs.find(p => p._id === pdfId);
+          if (pdf) document.getElementById('pdfTitle').textContent = pdf.title;
+        }
+      } catch { }
+    }
+
+    // ── Start ──────────────────────────────────────────────────────────────
+    fetchTitle();
+    loadPDF();
+
+    // 🔥 Watermark dynamic
+    const userId = localStorage.getItem("userId") || "User";
+
+    setInterval(() => {
+      const time = new Date().toLocaleTimeString();
+      document.getElementById("watermark").innerText =
+        `${userId} | ${time}`;
+    }, 1000);
+
+
+    // 🚫 Screenshot alert (limited)
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "PrintScreen") {
+        alert("Screenshot not allowed!");
+      }
+    });
+
+    // 🚫 Right click disable
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
   </script>
 </body>
 

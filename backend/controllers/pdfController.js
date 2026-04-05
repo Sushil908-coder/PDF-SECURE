@@ -106,15 +106,15 @@ const deletePDF = async (req, res) => {
       return res.status(404).json({ success: false, message: 'PDF not found.' });
     }
 
-    // Delete physical file
-    const filePath = path.join(UPLOAD_DIR, pdf.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // 🔥 Delete from Cloudinary
+    await cloudinary.uploader.destroy(pdf.public_id, {
+      resource_type: "raw"
+    });
 
     await PDF.findByIdAndDelete(req.params.id);
 
     res.json({ success: true, message: `"${pdf.title}" deleted successfully.` });
+
   } catch (err) {
     console.error('deletePDF error:', err);
     res.status(500).json({ success: false, message: 'Failed to delete PDF.' });
@@ -153,61 +153,21 @@ const togglePDF = async (req, res) => {
  */
 const streamPDF = async (req, res) => {
   try {
-    // Find the PDF metadata
     const pdf = await PDF.findById(req.params.id);
     if (!pdf) {
       return res.status(404).json({ success: false, message: 'PDF not found.' });
     }
 
-    // Students can only access active PDFs
     if (!pdf.isActive && req.user.role === 'student') {
       return res.status(403).json({ success: false, message: 'This PDF is not available.' });
     }
 
-    // Resolve real file path (never sent to client)
-    const filePath = path.join(UPLOAD_DIR, pdf.filename);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ success: false, message: 'File not found on server.' });
-    }
+    // 🔥 Direct Cloudinary URL
+    res.redirect(pdf.fileUrl);
 
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
-
-    // Security headers: prevent caching and direct access
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Disposition', 'inline'); // Show in viewer, not download
-    // Prevent embedding in other sites
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-
-    // ── Range Request Support (for PDF.js page-by-page loading) ────────────
-    const range = req.headers.range;
-
-    if (range) {
-      const parts = range.replace(/bytes=/, '').split('-');
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-      const chunkSize = end - start + 1;
-
-      res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Length', chunkSize);
-      res.status(206); // Partial content
-
-      const stream = fs.createReadStream(filePath, { start, end });
-      stream.pipe(res);
-    } else {
-      res.setHeader('Content-Length', fileSize);
-      res.setHeader('Accept-Ranges', 'bytes');
-      
-      const stream = fs.createReadStream(filePath);
-      stream.pipe(res);
-    }
-
-    // Log the view (fire and forget)
+    // Log view
     PDF.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
+
     if (req.user.role === 'student') {
       AccessLog.create({
         user: req.user._id,

@@ -377,9 +377,16 @@
       `).join('');
     }
 
-    function openPDF(id) {
-      window.location.href = `/student/viewer.html?id=${id}`;
-    }
+  function openPDF(id) {
+  if (!id) {
+    alert("PDF ID missing ❌");
+    return;
+  }
+
+  console.log("Opening PDF ID:", id); // debug
+
+  window.location.href = `/student/viewer.html?id=${id}`;
+}
 
     function esc(str) {
       if (!str) return '';

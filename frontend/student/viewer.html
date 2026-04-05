@@ -316,13 +316,10 @@
     </div>
   </div>
 
-  <!-- PDF render area -->
-  <!-- <div class="pdf-wrapper" id="pdfWrapper">
-    <div class="loading-state" id="loadingState">
-      <div class="spinner"></div>
-      <div>Loading your note...</div>
-    </div>
-  </div> -->
+  <iframe id="pdfFrame" 
+        style="width:100%; height:100vh; border:none;"
+        sandbox="allow-scripts allow-same-origin">
+</iframe>
 
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
@@ -338,6 +335,39 @@
 // ================= GET PDF ID =================
 const params = new URLSearchParams(window.location.search);
 const pdfId = params.get("id");
+
+// ================= LOAD PDF =================
+async function loadPDF() {
+  if (!pdfId) {
+    alert("PDF ID missing ❌");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/pdf/list', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    const data = await res.json();
+
+    const pdf = data.pdfs.find(p => p._id === pdfId);
+
+    if (!pdf) {
+      alert("PDF not found ❌");
+      return;
+    }
+
+    // 🔥 iframe me show karna
+    const iframe = document.getElementById("pdfFrame");
+    iframe.src = pdf.fileUrl;
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load PDF ❌");
+  }
+}
 
 // ================= SECURITY =================
 document.addEventListener('contextmenu', e => e.preventDefault());
@@ -355,50 +385,17 @@ document.addEventListener('keydown', e => {
 // ================= WATERMARK =================
 const user = JSON.parse(localStorage.getItem('user') || '{}');
 if (user.userId) {
-  document.getElementById('watermark').textContent =
-    `${user.userId} · PDF Notes Platform · ${user.userId}`;
-}
-
-// ================= LOAD PDF =================
-async function openPDF() {
-  if (!pdfId) {
-    alert("PDF ID missing ❌");
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/pdf/list', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-
-    const data = await response.json();
-
-    if (!data || !data.pdfs) {
-      alert("Data not received ❌");
-      return;
-    }
-
-    const pdf = data.pdfs.find(p => p._id === pdfId);
-
-    if (!pdf) {
-      alert("PDF not found ❌");
-      return;
-    }
-
-    // 🔥 FINAL OPEN
-    window.location.href = pdf.fileUrl;
-
-  } catch (error) {
-    console.error(error);
-    alert("Failed to load PDF ❌");
-  }
+  setInterval(() => {
+    const time = new Date().toLocaleTimeString();
+    document.getElementById('watermark').innerText =
+      `${user.userId} | ${time}`;
+  }, 1000);
 }
 
 // ================= START =================
-openPDF();
+loadPDF();
   </script>
+  
 </body>
 
 </html>

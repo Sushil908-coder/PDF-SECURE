@@ -402,24 +402,13 @@ if (!pdfId) {
 
     // ── Load PDF ───────────────────────────────────────────────────────────
 async function loadPDF() {
-  if (!pdfId) return;
-
-  try {
-    const data = await API.get('/api/pdf/list');
-
-    const pdf = data.pdfs.find(p => p._id === pdfId);
-
-    if (!pdf) {
-      alert("PDF not found ❌");
-      return;
-    }
-
-    window.location.href = pdf.fileUrl;
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load PDF");
+  if (!pdfId) {
+    alert("PDF ID missing ❌");
+    return;
   }
+
+  // 🔥 DIRECT BACKEND STREAM
+  window.location.href = `/api/pdf/stream/${pdfId}`;
 }
     
 

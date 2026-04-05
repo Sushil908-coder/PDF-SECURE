@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Notes Platform — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e2d45;
+      --accent: #3b82f6;
+      --accent2: #6366f1;
+      --gold: #f59e0b;
+      --text: #e8eaf0;
+      --muted: #6b7a99;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Animated background */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 8s ease-in-out infinite;
+    }
+    .orb-1 { width: 400px; height: 400px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 300px; height: 300px; background: var(--accent2); bottom: -80px; right: -80px; animation-delay: 3s; }
+    .orb-3 { width: 200px; height: 200px; background: var(--gold); top: 50%; left: 50%; animation-delay: 1.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.05); }
+    }
+
+    /* Grid lines */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Login card */
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 1rem;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .brand-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.3);
+    }
+    .brand h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .brand p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+      backdrop-filter: blur(20px);
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+    input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9375rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .btn {
+      width: 100%;
+      padding: 0.875rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.01em;
+      margin-top: 0.5rem;
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-loader {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .alert.show { display: flex; align-items: center; gap: 0.5rem; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+    .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+    .footer-note span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="grid-bg"></div>
+
+  <div class="login-container">
+    <div class="brand">
+      <div class="brand-icon">📚</div>
+      <h1>PDF Notes Platform</h1>
+      <p>Secure learning management system</p>
+    </div>
+
+    <div class="card">
+      <div class="alert alert-error" id="errorAlert">
+        <span>⚠️</span>
+        <span id="errorMsg">Error message</span>
+      </div>
+      <div class="alert alert-success" id="successAlert">
+        <span>✅</span>
+        <span id="successMsg">Success message</span>
+      </div>
+
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" placeholder="Enter your user ID" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+      </div>
+
+      <button class="btn" id="loginBtn" onclick="handleLogin()">
+        Sign In
+      </button>
+    </div>
+
+    <p class="footer-note">
+      <span>🔒 Contact your administrator to get access</span>
+    </p>
+  </div>
+
+  <script src="/shared/device.js"></script>
+  <script src="/shared/api.js"></script>
+  <script>
+    // Redirect if already logged in
+    (function() {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      if (token && role) {
+        if (role === 'admin') window.location.href = '/admin/dashboard.html';
+        else window.location.href = '/student/dashboard.html';
+      }
+    })();
+
+    const loginBtn = document.getElementById('loginBtn');
+
+    function showError(msg) {
+      const el = document.getElementById('errorAlert');
+      document.getElementById('errorMsg').textContent = msg;
+      el.classList.add('show');
+      document.getElementById('successAlert').classList.remove('show');
+    }
+    function showSuccess(msg) {
+      const el = document.getElementById('successAlert');
+      document.getElementById('successMsg').textContent = msg;
+      el.classList.add('show');
+      document.getElementById('errorAlert').classList.remove('show');
+    }
+
+    async function handleLogin() {
+      const userId = document.getElementById('userId').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!userId || !password) {
+        showError('Please enter your User ID and password.');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="btn-loader"></span>Signing in...';
+
+      try {
+        const deviceId = await getDeviceId();
+        const deviceInfo = getDeviceInfo();
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, password, deviceId, deviceInfo })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showSuccess('Login successful! Redirecting...');
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.user.role);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('deviceId', deviceId);
+
+          setTimeout(() => {
+            if (data.user.role === 'admin') {
+              window.location.href = '/admin/dashboard.html';
+            } else {
+              window.location.href = '/student/dashboard.html';
+            }
+          }, 800);
+        } else {
+          showError(data.message || 'Login failed.');
+        }
+      } catch (err) {
+        showError('Connection error. Please try again.');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = 'Sign In';
+      }
+    }
+
+    // Enter key support
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('userId').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('password').focus();
+    });
+  </script>
+</body>
+</html>

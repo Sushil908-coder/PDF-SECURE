@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — PDF Notes Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shared/common.css" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📚</div>
+      <div>
+        <div class="brand-name">PDF Notes</div>
+        <div class="brand-role">Administrator</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" onclick="showTab('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a href="#" class="nav-item" onclick="showTab('pdfs')">
+        <span class="nav-icon">📄</span> PDF Files
+      </a>
+      <a href="#" class="nav-item" onclick="showTab('users')">
+        <span class="nav-icon">👥</span> Students
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info" id="adminInfo">Admin</div>
+      <button class="btn-logout" onclick="API.logout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main content -->
+  <main class="main">
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <span class="online-badge" id="onlineBadge">● 0 online</span>
+      </div>
+    </header>
+
+    <!-- ── DASHBOARD TAB ─────────────────────────────── -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total Students</div>
+          </div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statApproved">—</div>
+            <div class="stat-label">Approved</div>
+          </div>
+        </div>
+        <div class="stat-card stat-yellow">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statPending">—</div>
+            <div class="stat-label">Pending Approval</div>
+          </div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-icon">🚫</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statBlocked">—</div>
+            <div class="stat-label">Blocked</div>
+          </div>
+        </div>
+        <div class="stat-card stat-blue">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statOnline">—</div>
+            <div class="stat-label">Online Now</div>
+          </div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-icon">📄</div>
+          <div class="stat-body">
+            <div class="stat-value" id="statPDFs">—</div>
+            <div class="stat-label">Total PDFs</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Recent Activity</h2>
+        <button class="btn-refresh" onclick="loadStats()">↻ Refresh</button>
+      </div>
+      <div class="activity-list" id="activityList">
+        <div class="empty-state">Loading activity...</div>
+      </div>
+    </div>
+
+    <!-- ── PDFs TAB ──────────────────────────────────── -->
+    <div class="tab-content" id="tab-pdfs">
+      <!-- Upload form -->
+      <div class="upload-card">
+        <h2>Upload New PDF</h2>
+        <div class="upload-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Title *</label>
+              <input type="text" id="pdfTitle" placeholder="e.g., Chapter 1 – Algebra" />
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <input type="text" id="pdfCategory" placeholder="e.g., Mathematics" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="pdfDesc" placeholder="Optional description" />
+          </div>
+          <div class="file-drop" id="fileDrop" onclick="document.getElementById('pdfFile').click()">
+            <div class="file-drop-icon">📂</div>
+            <div class="file-drop-text">Click or drag a PDF file here</div>
+            <div class="file-drop-hint" id="fileHint">Max 50MB · PDF only</div>
+            <input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handleFileSelect(this)" />
+          </div>
+          <button class="btn-primary" id="uploadBtn" onclick="uploadPDF()">
+            Upload PDF
+          </button>
+          <div class="upload-progress" id="uploadProgress" style="display:none">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <span id="progressText">Uploading...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>All PDFs</h2>
+        <button class="btn-refresh" onclick="loadPDFs()">↻ Refresh</button>
+      </div>
+      <div id="pdfList" class="pdf-grid">
+        <div class="empty-state">Loading PDFs...</div>
+      </div>
+    </div>
+
+    <!-- ── STUDENTS TAB ──────────────────────────────── -->
+    <div class="tab-content" id="tab-users">
+      <!-- Create student form -->
+      <div class="upload-card">
+        <h2>Create New Student Account</h2>
+        <div class="upload-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>User ID *</label>
+              <input type="text" id="newUserId" placeholder="e.g., stu001" />
+            </div>
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="newName" placeholder="Student's full name" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Password *</label>
+              <input type="password" id="newPassword" placeholder="Min 6 characters" />
+            </div>
+            <div class="form-group">
+              <label>Batch / Class</label>
+              <input type="text" id="newBatch" placeholder="e.g., Batch 2024-A" />
+            </div>
+          </div>
+          <button class="btn-primary" onclick="createStudent()">Create Student</button>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>All Students</h2>
+        <div class="filter-tabs">
+          <button class="filter-btn active" onclick="filterUsers('all', this)">All</button>
+          <button class="filter-btn" onclick="filterUsers('pending', this)">Pending</button>
+          <button class="filter-btn" onclick="filterUsers('approved', this)">Approved</button>
+          <button class="filter-btn" onclick="filterUsers('blocked', this)">Blocked</button>
+        </div>
+        <button class="btn-refresh" onclick="loadUsers()">↻ Refresh</button>
+      </div>
+      <div id="userList" class="user-list">
+        <div class="empty-state">Loading students...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/shared/device.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

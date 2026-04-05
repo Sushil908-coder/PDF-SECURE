@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viewing PDF — PDF Notes Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- PDF.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: #1e2d45;
+      --accent: #3b82f6;
+      --text: #e8eaf0;
+      --muted: #6b7a99;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Security Layer: block selection everywhere ── */
+    * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      gap: 1rem;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .toolbar-back {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .toolbar-back:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-title {
+      flex: 1;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toolbar-pages {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .toolbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .nav-btn {
+      width: 32px; height: 32px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .nav-btn:hover { background: var(--border); }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-input {
+      width: 44px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8125rem;
+      padding: 0.25rem;
+      outline: none;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+    .zoom-controls { display: flex; align-items: center; gap: 0.25rem; }
+    .zoom-label { font-size: 0.75rem; color: var(--muted); min-width: 40px; text-align: center; }
+
+    /* ── Security Overlay: prevents screenshot tools from capturing content ── */
+    .security-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      /* Subtle noise pattern that disrupts screen recording */
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.015) 2px,
+        rgba(0,0,0,0.015) 4px
+      );
+    }
+
+    /* ── Watermark ── */
+    .watermark {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(-30deg);
+      opacity: 0.045;
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    /* ── PDF Canvas area ── */
+    .pdf-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem;
+      gap: 1rem;
+      position: relative;
+      background: #1c1c2e;
+    }
+
+    /* Prevent right-click on pdf area */
+    .pdf-wrapper canvas {
+      display: block;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      border-radius: 4px;
+      max-width: 100%;
+    }
+
+    /* ── Loading state ── */
+    .loading-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(59,130,246,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Blur overlay (tab hidden) ── */
+    .blur-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,14,26,0.95);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: 1.25rem;
+      color: var(--muted);
+    }
+    .blur-overlay.show { display: flex; }
+    .blur-overlay .lock-icon { font-size: 3rem; }
+
+    /* ── Error state ── */
+    .error-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+    .error-icon { font-size: 3rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- Security overlay (disrupts screen recording) -->
+  <div class="security-overlay"></div>
+
+  <!-- Dynamic watermark with student ID -->
+  <div class="watermark" id="watermark">PDF Notes Platform</div>
+
+  <!-- Blur overlay on tab switch -->
+  <div class="blur-overlay" id="blurOverlay">
+    <div class="lock-icon">🔒</div>
+    <div>Content protected — switch back to continue</div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <a href="/student/dashboard.html" class="toolbar-back">← Back</a>
+    <div class="toolbar-title" id="pdfTitle">Loading...</div>
+    <div class="toolbar-nav">
+      <button class="nav-btn" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
+      <input type="number" class="page-input" id="pageInput" min="1" value="1" onchange="jumpToPage()" />
+      <button class="nav-btn" id="nextBtn" onclick="changePage(1)" disabled>›</button>
+    </div>
+    <div class="toolbar-pages" id="pageCount">— / —</div>
+    <div class="zoom-controls">
+      <button class="nav-btn" onclick="changeZoom(-0.25)">−</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="nav-btn" onclick="changeZoom(0.25)">+</button>
+    </div>
+  </div>
+
+  <!-- PDF render area -->
+  <div class="pdf-wrapper" id="pdfWrapper">
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <div>Loading your note...</div>
+    </div>
+  </div>
+
+  <script src="/shared/device.js"></script>
+  <script src="/shared/api.js"></script>
+  <script>
+    // ── Auth guard ─────────────────────────────────────────────────────────
+    (function() {
+      const token = localStorage.getItem('token');
+      if (!token) window.location.href = '/';
+    })();
+
+    // ── PDF.js setup ───────────────────────────────────────────────────────
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // ── State ──────────────────────────────────────────────────────────────
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let scale = 1.2;
+    let rendering = false;
+    let renderQueue = null;
+    const pdfId = new URLSearchParams(window.location.search).get('id');
+
+    if (!pdfId) {
+      document.getElementById('loadingState').innerHTML =
+        '<div class="error-state"><div class="error-icon">⚠️</div>No PDF specified.</div>';
+    }
+
+    // ── Security measures ──────────────────────────────────────────────────
+    // Disable right-click everywhere
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Disable keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      const blocked = [
+        e.ctrlKey && 's', e.ctrlKey && 'p', e.ctrlKey && 'u',
+        e.ctrlKey && 'a', e.ctrlKey && 'c', e.ctrlKey && 'x',
+        e.key === 'F12',
+        e.ctrlKey && e.shiftKey && 'i',
+        e.ctrlKey && e.shiftKey && 'j',
+        e.ctrlKey && e.shiftKey && 'c',
+        e.key === 'PrintScreen'
+      ];
+      if (blocked.some(Boolean)) e.preventDefault();
+    });
+
+    // PrintScreen key → blur
+    document.addEventListener('keyup', e => {
+      if (e.key === 'PrintScreen') {
+        document.getElementById('blurOverlay').classList.add('show');
+        setTimeout(() => document.getElementById('blurOverlay').classList.remove('show'), 3000);
+      }
+    });
+
+    // Tab switch → blur content
+    document.addEventListener('visibilitychange', () => {
+      const overlay = document.getElementById('blurOverlay');
+      if (document.hidden) {
+        overlay.classList.add('show');
+      } else {
+        setTimeout(() => overlay.classList.remove('show'), 500);
+      }
+    });
+
+    // Prevent drag
+    document.addEventListener('dragstart', e => e.preventDefault());
+
+    // ── Watermark with user ID ─────────────────────────────────────────────
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.userId) {
+      document.getElementById('watermark').textContent =
+        `${user.userId} · PDF Notes Platform · ${user.userId}`;
+    }
+
+    // ── Load PDF ───────────────────────────────────────────────────────────
+    async function loadPDF() {
+      if (!pdfId) return;
+
+      const token = localStorage.getItem('token');
+      const deviceId = localStorage.getItem('deviceId');
+
+      try {
+        // Use PDF.js with a secure token-authenticated URL
+        const pdfTask = pdfjsLib.getDocument({
+          url: `/api/pdf/stream/${pdfId}`,
+          httpHeaders: {
+            'Authorization': `Bearer ${token}`,
+            'X-Device-ID': deviceId || ''
+          },
+          // Prevent PDF.js from caching the file data
+          disableAutoFetch: false,
+          disableStream: false,
+          withCredentials: false
+        });
+
+        pdfDoc = await pdfTask.promise;
+        totalPages = pdfDoc.numPages;
+
+        document.getElementById('pageCount').textContent = `/ ${totalPages}`;
+        document.getElementById('pageInput').max = totalPages;
+        document.getElementById('nextBtn').disabled = totalPages <= 1;
+        document.getElementById('prevBtn').disabled = true;
+        document.getElementById('loadingState').style.display = 'none';
+
+        await renderPage(1);
+      } catch (err) {
+        console.error('PDF load error:', err);
+        const wrapper = document.getElementById('pdfWrapper');
+        wrapper.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">⚠️</div>
+            <div>Failed to load PDF. ${err.status === 403 ? 'Access denied.' : 'Please try again.'}</div>
+            <br><a href="/student/dashboard.html" style="color:var(--accent)">← Go Back</a>
+          </div>`;
+      }
+    }
+
+    // ── Render a page ──────────────────────────────────────────────────────
+    async function renderPage(pageNum) {
+      if (!pdfDoc || rendering) {
+        renderQueue = pageNum;
+        return;
+      }
+
+      rendering = true;
+
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+
+        // Calculate scale to fit width on mobile too
+        const wrapperWidth = document.getElementById('pdfWrapper').clientWidth - 32;
+        const viewport = page.getViewport({ scale: 1 });
+        const autoScale = Math.min(scale, wrapperWidth / viewport.width);
+        const scaledViewport = page.getViewport({ scale: autoScale });
+
+        // Create or reuse canvas
+        let canvas = document.getElementById(`page-${pageNum}`);
+        if (!canvas) {
+          canvas = document.createElement('canvas');
+          canvas.id = `page-${pageNum}`;
+          // Security: prevent canvas image extraction
+          canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+          // Clear and add
+          const wrapper = document.getElementById('pdfWrapper');
+          const oldCanvas = wrapper.querySelector('canvas');
+          if (oldCanvas) oldCanvas.remove();
+          wrapper.appendChild(canvas);
+        }
+
+        canvas.height = scaledViewport.height;
+        canvas.width = scaledViewport.width;
+
+        const ctx = canvas.getContext('2d');
+        const renderCtx = { canvasContext: ctx, viewport: scaledViewport };
+
+        await page.render(renderCtx).promise;
+
+        currentPage = pageNum;
+        document.getElementById('pageInput').value = pageNum;
+        document.getElementById('prevBtn').disabled = pageNum <= 1;
+        document.getElementById('nextBtn').disabled = pageNum >= totalPages;
+
+      } catch (err) {
+        console.error('Render error:', err);
+      }
+
+      rendering = false;
+
+      if (renderQueue && renderQueue !== currentPage) {
+        const next = renderQueue;
+        renderQueue = null;
+        await renderPage(next);
+      }
+    }
+
+    // ── Page controls ──────────────────────────────────────────────────────
+    function changePage(delta) {
+      const newPage = currentPage + delta;
+      if (newPage < 1 || newPage > totalPages) return;
+      renderPage(newPage);
+    }
+
+    function jumpToPage() {
+      const val = parseInt(document.getElementById('pageInput').value);
+      if (!val || val < 1 || val > totalPages) {
+        document.getElementById('pageInput').value = currentPage;
+        return;
+      }
+      renderPage(val);
+    }
+
+    // ── Zoom controls ──────────────────────────────────────────────────────
+    function changeZoom(delta) {
+      scale = Math.max(0.5, Math.min(3, scale + delta));
+      document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
+      if (pdfDoc) renderPage(currentPage);
+    }
+
+    // ── Keyboard navigation ────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changePage(-1);
+    });
+
+    // ── Touch/swipe support ────────────────────────────────────────────────
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) changePage(diff > 0 ? 1 : -1);
+    });
+
+    // ── Fetch PDF title ────────────────────────────────────────────────────
+    async function fetchTitle() {
+      try {
+        const res = await API.get('/api/pdf/list');
+        if (!res) return;
+        const data = await res.json();
+        if (data.success) {
+          const pdf = data.pdfs.find(p => p._id === pdfId);
+          if (pdf) document.getElementById('pdfTitle').textContent = pdf.title;
+        }
+      } catch {}
+    }
+
+    // ── Start ──────────────────────────────────────────────────────────────
+    fetchTitle();
+    loadPDF();
+  </script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Notes — PDF Notes Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/shared/common.css" />
+  <style>
+    /* ─── Student-specific styles ────────────────────────────────────────── */
+    .notes-header {
+      margin-bottom: 1.5rem;
+    }
+    .notes-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+    .notes-header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    /* Search bar */
+    .search-bar {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 0.9375rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    /* Category filter */
+    .categories {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .cat-btn {
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .cat-btn.active, .cat-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* PDF cards for students */
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .note-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.375rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .note-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .note-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .note-card:hover::before { opacity: 1; }
+    .note-icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.875rem;
+      display: block;
+    }
+    .note-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.375rem;
+      line-height: 1.4;
+    }
+    .note-desc {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 0.875rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .note-category {
+      font-size: 0.6875rem;
+      background: rgba(59,130,246,0.12);
+      color: #93c5fd;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+    .note-date { font-size: 0.6875rem; color: var(--muted); }
+    .open-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.6rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .open-btn:hover { opacity: 0.85; }
+
+    /* Welcome bar */
+    .welcome-bar {
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .welcome-emoji { font-size: 2rem; }
+    .welcome-text h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+    .welcome-text p { font-size: 0.8125rem; color: var(--muted); }
+
+    @media (max-width: 480px) {
+      .notes-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📚</div>
+      <div>
+        <div class="brand-name">PDF Notes</div>
+        <div class="brand-role">Student Portal</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active">
+        <span class="nav-icon">📄</span> My Notes
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info" id="studentInfo">Student</div>
+      <button class="btn-logout" onclick="API.logout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <h1 class="page-title">My Notes</h1>
+    </header>
+
+    <div class="tab-content active" id="tab-notes">
+      <!-- Welcome bar -->
+      <div class="welcome-bar">
+        <div class="welcome-emoji">🎓</div>
+        <div class="welcome-text">
+          <h3 id="welcomeName">Welcome back!</h3>
+          <p id="welcomeMeta">Your study materials are ready.</p>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search notes..." oninput="filterNotes()" />
+      </div>
+
+      <!-- Category filters -->
+      <div class="categories" id="categoryFilters">
+        <button class="cat-btn active" onclick="setCat('', this)">All</button>
+      </div>
+
+      <!-- Notes grid -->
+      <div class="notes-grid" id="notesGrid">
+        <div class="empty-state">Loading your notes...</div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/shared/device.js"></script>
+  <script src="/shared/api.js"></script>
+  <script>
+    // ─── Auth guard ────────────────────────────────────────────────────────
+    (function() {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      if (!token || role !== 'student') window.location.href = '/';
+    })();
+
+    // ─── Security: disable right-click, text selection, shortcuts ─────────
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (
+        (e.ctrlKey && ['s','p','u','a','c'].includes(e.key.toLowerCase())) ||
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()))
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // Blur on tab switch (anti-screenshot)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        document.body.style.filter = 'blur(10px)';
+      } else {
+        setTimeout(() => { document.body.style.filter = ''; }, 500);
+      }
+    });
+
+    // ─── State ────────────────────────────────────────────────────────────
+    let allNotes = [];
+    let currentCat = '';
+
+    // ─── Init ─────────────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      document.getElementById('studentInfo').textContent = user.name || 'Student';
+      document.getElementById('welcomeName').textContent = `Welcome back, ${user.name || 'Student'}!`;
+      document.getElementById('welcomeMeta').textContent = user.batch
+        ? `${user.batch} · Your study materials are ready.`
+        : 'Your study materials are ready.';
+      loadNotes();
+    });
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('show');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+    }
+
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    async function loadNotes() {
+      try {
+        const res = await API.get('/api/pdf/list');
+        if (!res) return;
+        const data = await res.json();
+        if (!data.success) { showToast('Failed to load notes.', 'error'); return; }
+
+        allNotes = data.pdfs;
+        buildCategoryFilters();
+        renderNotes();
+      } catch { showToast('Error loading notes.', 'error'); }
+    }
+
+    function buildCategoryFilters() {
+      const cats = [...new Set(allNotes.map(n => n.category).filter(Boolean))];
+      const container = document.getElementById('categoryFilters');
+      container.innerHTML = `<button class="cat-btn ${currentCat === '' ? 'active' : ''}" onclick="setCat('', this)">All</button>`;
+      cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `cat-btn ${currentCat === cat ? 'active' : ''}`;
+        btn.textContent = cat;
+        btn.onclick = function() { setCat(cat, this); };
+        container.appendChild(btn);
+      });
+    }
+
+    function setCat(cat, btn) {
+      currentCat = cat;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderNotes();
+    }
+
+    function filterNotes() { renderNotes(); }
+
+    function renderNotes() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const container = document.getElementById('notesGrid');
+
+      let notes = allNotes.filter(n => {
+        const matchCat = !currentCat || n.category === currentCat;
+        const matchSearch = !search ||
+          n.title.toLowerCase().includes(search) ||
+          (n.description && n.description.toLowerCase().includes(search)) ||
+          (n.category && n.category.toLowerCase().includes(search));
+        return matchCat && matchSearch;
+      });
+
+      if (notes.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">📭</div>
+            No notes available yet. Check back later!
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = notes.map(note => `
+        <div class="note-card">
+          <span class="note-icon">📄</span>
+          <div class="note-title">${esc(note.title)}</div>
+          ${note.description ? `<div class="note-desc">${esc(note.description)}</div>` : ''}
+          <div class="note-footer">
+            <span class="note-category">${esc(note.category || 'General')}</span>
+            <span class="note-date">${formatDate(note.createdAt)}</span>
+          </div>
+          <button class="open-btn" onclick="openPDF('${note._id}')">📖 Open & Read</button>
+        </div>
+      `).join('');
+    }
+
+    function openPDF(id) {
+      window.location.href = `/student/viewer.html?id=${id}`;
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+  </script>
+</body>
+</html>

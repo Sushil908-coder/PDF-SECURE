@@ -81,7 +81,7 @@ const uploadPDF = async (req, res) => {
 const listPDFs = async (req, res) => {
   try {
     const filter = req.user.role === 'admin' ? {} : { isActive: true };
-    
+
     const pdfs = await PDF.find(filter)
       .populate('uploadedBy', 'name userId')
       .sort({ createdAt: -1 })
@@ -102,8 +102,15 @@ const listPDFs = async (req, res) => {
 const deletePDF = async (req, res) => {
   try {
     const pdf = await PDF.findById(req.params.id);
+
     if (!pdf) {
       return res.status(404).json({ success: false, message: 'PDF not found.' });
+    }
+
+    if (pdf.public_id) {
+      await cloudinary.uploader.destroy(pdf.public_id, {
+        resource_type: "raw"
+      });
     }
 
     // 🔥 Delete from Cloudinary
@@ -134,8 +141,8 @@ const togglePDF = async (req, res) => {
     pdf.isActive = !pdf.isActive;
     await pdf.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `PDF is now ${pdf.isActive ? 'visible' : 'hidden'} to students.`,
       isActive: pdf.isActive
     });
@@ -176,7 +183,7 @@ const streamPDF = async (req, res) => {
         deviceId: req.headers['x-device-id'],
         ip: req.ip,
         userAgent: req.headers['user-agent']
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
   } catch (err) {

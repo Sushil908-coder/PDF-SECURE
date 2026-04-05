@@ -12,7 +12,7 @@ const { uploadPDF, listPDFs, deletePDF, togglePDF, streamPDF } = require('../con
 router.get('/list', authenticate, listPDFs);
 
 // Secure stream endpoint (both admin and students)
-router.get('/stream/:id', authenticate, streamPDF);
+router.get('/stream/:id', streamPDF);
 
 // Admin-only routes
 router.post('/upload', authenticate, requireAdmin, upload.single('pdf'), handleUploadError, uploadPDF);

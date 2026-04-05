@@ -18,6 +18,8 @@ const UPLOAD_DIR = path.join(__dirname, '../uploads');
  */
 const uploadPDF = async (req, res) => {
   try {
+    const file = req.file; 
+    
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }

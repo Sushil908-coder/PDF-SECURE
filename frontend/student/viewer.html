@@ -378,7 +378,7 @@
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
-      const scale = window.innerWidth < 600 ? 1 : 1.5;
+      // const scale = window.innerWidth < 600 ? 1 : 1.5;
       const viewport = page.getViewport({ scale: scale });
 
       const outputScale = window.devicePixelRatio || 1;
@@ -425,6 +425,23 @@
       }
     }, { passive: false });
 
+
+    function changeZoom(value) {
+  scale += value;
+
+  if (scale < 0.5) scale = 0.5;
+  if (scale > 3) scale = 3;
+
+  document.getElementById("zoomLabel").innerText =
+    Math.round(scale * 100) + "%";
+
+  const container = document.getElementById("pdfContainer");
+  container.innerHTML = "";
+
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    renderPage(i);
+  }
+}
 
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";

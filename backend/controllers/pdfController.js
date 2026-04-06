@@ -160,41 +160,28 @@ const togglePDF = async (req, res) => {
  * Streams the PDF file securely — never exposes the real file path.
  * Supports range requests for efficient PDF.js loading.
  */
+const axios = require("axios");
+
 const streamPDF = async (req, res) => {
   try {
-    if (!req.params.id || req.params.id === "undefined") {
-      return res.status(400).json({ message: "Invalid PDF ID" });
-    }
     const pdf = await PDF.findById(req.params.id);
-    if (!pdf) {
-      return res.status(404).json({ success: false, message: 'PDF not found.' });
-    }
+    if (!pdf) return res.status(404).json({ message: "PDF not found" });
 
-    if (!pdf.isActive && req.user.role === 'student') {
-      return res.status(403).json({ success: false, message: 'This PDF is not available.' });
-    }
+    const response = await axios({
+      url: pdf.fileUrl,
+      method: "GET",
+      responseType: "stream"
+    });
 
-    // 🔥 Direct Cloudinary URL
-    res.redirect(pdf.fileUrl);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline");
 
-    // Log view
-    PDF.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
-
-    if (req.user.role === 'student') {
-      AccessLog.create({
-        user: req.user._id,
-        pdf: pdf._id,
-        action: 'view',
-        deviceId: req.headers['x-device-id'],
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      }).catch(() => { });
-    }
+    response.data.pipe(res);
 
   } catch (err) {
-    console.error('streamPDF error:', err);
-    res.status(500).json({ success: false, message: 'Failed to stream PDF.' });
+    console.error("Stream error:", err);
+    res.status(500).send("Error loading PDF");
   }
-};
+};;
 
 module.exports = { uploadPDF, listPDFs, deletePDF, togglePDF, streamPDF };

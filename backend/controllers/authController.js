@@ -71,6 +71,18 @@ const login = async (req, res) => {
       }
     }
 
+// 🔥 ADMIN DEVICE LIMIT
+if (user.role === 'admin') {
+  const MAX_DEVICES = 2;
+
+  if (user.adminSessions && user.adminSessions.length >= MAX_DEVICES) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin device limit reached ❌"
+    });
+  }
+}
+
     // ── Generate unique token ID (for single-session enforcement) ─────────────
     const tokenId = uuidv4();
 
@@ -86,11 +98,22 @@ const login = async (req, res) => {
     );
 
     // ── Update user: bind device (if first login) + store session token ───────
-    const updateData = {
-      activeTokenId: tokenId,
-      lastLogin: new Date(),
-      lastSeen: new Date()
-    };
+  const updateData = {
+  lastLogin: new Date(),
+  lastSeen: new Date()
+};
+
+// 🔥 ADMIN vs STUDENT LOGIC
+if (user.role === 'admin') {
+  updateData.$push = {
+    adminSessions: {
+      tokenId,
+      deviceId
+    }
+  };
+} else {
+  updateData.activeTokenId = tokenId;
+}
 
     // Bind device on first successful login
     if (user.role === 'student' && !user.deviceId) {
@@ -135,7 +158,15 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
   try {
     // Clear the active token so no further requests can use it
-    await User.findByIdAndUpdate(req.user._id, { activeTokenId: null });
+if (req.user.role === 'admin') {
+  await User.findByIdAndUpdate(req.user._id, {
+    $pull: {
+      adminSessions: { tokenId: req.user.tokenId }
+    }
+  });
+} else {
+  await User.findByIdAndUpdate(req.user._id, { activeTokenId: null });
+}
 
     await AccessLog.create({
       user: req.user._id,

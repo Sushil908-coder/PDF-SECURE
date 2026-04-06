@@ -68,6 +68,14 @@ const userSchema = new mongoose.Schema({
     default: null
   },
 
+  // 🔥 ONLY FOR ADMIN (multiple sessions)
+adminSessions: [
+  {
+    tokenId: String,
+    deviceId: String
+  }
+],
+
   // Timestamp of last login
   lastLogin: {
     type: Date,

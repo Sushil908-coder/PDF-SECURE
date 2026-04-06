@@ -51,12 +51,25 @@ if (req.query.token) {
     }
 
     // 6. Single-session enforcement: check token ID matches stored active token
-    if (user.activeTokenId !== decoded.tokenId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Session invalidated. You may have logged in from another device or session.' 
-      });
-    }
+  if (user.role === 'admin') {
+  const validSession = user.adminSessions.find(
+    s => s.tokenId === decoded.tokenId
+  );
+
+  if (!validSession) {
+    return res.status(401).json({
+      success: false,
+      message: 'Session invalid ❌'
+    });
+  }
+} else {
+  if (user.activeTokenId !== decoded.tokenId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Session invalid ❌'
+    });
+  }
+}
 
     // 7. Device restriction: verify request comes from registered device
     const requestDeviceId = req.headers['x-device-id'];

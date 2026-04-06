@@ -339,41 +339,32 @@
     let currentPage = 1;
 
     async function loadPDF() {
-      const res = await fetch('/api/pdf/list', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+  const token = localStorage.getItem("token");
 
-      const data = await res.json();
-      const pdf = data.pdfs.find(p => p._id === pdfId);
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      url: `/api/pdf/stream/${pdfId}?token=${token}`,
+      disableStream: true,
+      disableAutoFetch: true
+    });
 
-      if (!pdf) {
-        alert("PDF not found ❌");
-        return;
-      }
+    pdfDoc = await loadingTask.promise;
 
-      const token = localStorage.getItem("token");
-      const loadingTask = pdfjsLib.getDocument({
-        url: `/api/pdf/stream/${pdfId}?token=${token}`,
+    console.log("✅ PDF Loaded:", pdfDoc);
 
-        // 🔥 ADD THESE (VERY IMPORTANT)
-        disableStream: true,
-        disableAutoFetch: true
-      });
-      // 🔥 ADD THIS LINE (VERY IMPORTANT)
-      try {
-        pdfDoc = await loadingTask.promise;
-        console.log("✅ PDF Loaded:", pdfDoc);
-      } catch (error) {
-        console.error("❌ PDF Load Error:", error);
-        alert("PDF load failed ❌");
-      }
-      // console.log("PDF Loaded:", pdfDoc);
+    // 🔥 TOTAL PAGES
+    const totalPages = pdfDoc.numPages;
 
-      await renderPage(currentPage);
-
+    // 🔥 LOOP ALL PAGES (IMPORTANT)
+    for (let i = 1; i <= totalPages; i++) {
+      await renderPage(i);
     }
+
+  } catch (error) {
+    console.error("❌ PDF Load Error:", error);
+    alert("PDF load failed ❌");
+  }
+}
 
     async function renderPage(pageNum) {
       if (!pdfDoc) return;
@@ -381,7 +372,7 @@
       const page = await pdfDoc.getPage(pageNum);
 
       const container = document.getElementById("pdfContainer");
-      container.innerHTML = ""; // 🔥 important
+    
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 

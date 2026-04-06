@@ -6,6 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const PDF = require('../models/PDF');
+const axios = require("axios");
 const cloudinary = require('../config/cloudinary');
 const AccessLog = require('../models/AccessLog');
 
@@ -160,13 +161,25 @@ const togglePDF = async (req, res) => {
  * Streams the PDF file securely — never exposes the real file path.
  * Supports range requests for efficient PDF.js loading.
  */
-const axios = require("axios");
+const axios = require("axios"); // 🔥 file ke top me add karo (upar imports ke sath)
 
 const streamPDF = async (req, res) => {
   try {
-    const pdf = await PDF.findById(req.params.id);
-    if (!pdf) return res.status(404).json({ message: "PDF not found" });
+    if (!req.params.id || req.params.id === "undefined") {
+      return res.status(400).json({ message: "Invalid PDF ID" });
+    }
 
+    const pdf = await PDF.findById(req.params.id);
+
+    if (!pdf) {
+      return res.status(404).json({ success: false, message: 'PDF not found.' });
+    }
+
+    if (!pdf.isActive && req.user.role === 'student') {
+      return res.status(403).json({ success: false, message: 'This PDF is not available.' });
+    }
+
+    // 🔥 YAHI PAR ADD KARNA HAI (redirect ki jagah)
     const response = await axios({
       url: pdf.fileUrl,
       method: "GET",
@@ -178,10 +191,13 @@ const streamPDF = async (req, res) => {
 
     response.data.pipe(res);
 
+    // Log view
+    PDF.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).exec();
+
   } catch (err) {
-    console.error("Stream error:", err);
-    res.status(500).send("Error loading PDF");
+    console.error('streamPDF error:', err);
+    res.status(500).json({ success: false, message: 'Failed to stream PDF.' });
   }
-};;
+};
 
 module.exports = { uploadPDF, listPDFs, deletePDF, togglePDF, streamPDF };

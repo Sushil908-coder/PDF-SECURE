@@ -22,7 +22,7 @@ app.set('trust proxy', 1);
 
 // ─── Security Middleware ────────────────────────────────────────────────────
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: false, // Allow PDF streaming from Cloudinary
   contentSecurityPolicy: false // We handle CSP in frontend
 }));
 

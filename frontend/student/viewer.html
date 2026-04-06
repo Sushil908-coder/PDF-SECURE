@@ -353,19 +353,26 @@ async function loadPDF() {
     return;
   }
 
+// const loadingTask = pdfjsLib.getDocument({
+//   url: `/api/pdf/stream/${pdfId}`,
+//   httpHeaders: {
+//     Authorization: `Bearer ${localStorage.getItem('token')}`
+//   },
+//   withCredentials: true
+// });
+
+
+const token = localStorage.getItem("token");
+
 const loadingTask = pdfjsLib.getDocument({
-  url: `/api/pdf/stream/${pdfId}`,
-  httpHeaders: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  },
-  withCredentials: true
+  url: `/api/pdf/stream/${pdfId}?token=${token}`
 });
 
 // 🔥 ADD THIS LINE (VERY IMPORTANT)
 pdfDoc = await loadingTask.promise;
+console.log("PDF Loaded:", pdfDoc);
 
-// First page render
-// await renderPage(currentPage);
+await renderPage(currentPage);
 
 }
 

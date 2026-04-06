@@ -11,6 +11,10 @@ const User = require('../models/User');
  */
 const authenticate = async (req, res, next) => {
   try {
+    // 🔥 ADD THIS (VERY IMPORTANT)
+if (req.query.token) {
+  req.headers.authorization = `Bearer ${req.query.token}`;
+}
     // 1. Extract token from Authorization header
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

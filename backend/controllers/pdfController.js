@@ -189,7 +189,7 @@ const streamPDF = async (req, res) => {
     });
 
     // 🔥 IMPORTANT HEADERS
-    res.setHeader("Content-Type", "application/pdf");
+   res.setHeader("Cache-Control", "public, max-age=86400");
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Content-Disposition", "inline");
 

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Viewing PDF — PDF Notes Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -286,8 +286,8 @@
     }
 
     canvas {
-      width: 100% !important;
-      height: auto !important;
+      max-width: 100%;
+      height: auto;
       margin-bottom: 10px;
     }
 
@@ -419,14 +419,19 @@
       }, 100);
     }, 2000);
 
-    document.addEventListener("touchstart", e => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+    // document.addEventListener("touchstart", e => {
+    //   if (e.touches.length > 1) {
+    //     e.preventDefault();
+    //   }
+    // }, { passive: false });
 
 
     function changeZoom(value) {
+  const container = document.getElementById("pdfContainer");
+
+  // 🔥 save scroll position
+  const scrollTop = window.scrollY;
+
   scale += value;
 
   if (scale < 0.5) scale = 0.5;
@@ -435,14 +440,17 @@
   document.getElementById("zoomLabel").innerText =
     Math.round(scale * 100) + "%";
 
-  const container = document.getElementById("pdfContainer");
   container.innerHTML = "";
 
   for (let i = 1; i <= pdfDoc.numPages; i++) {
     renderPage(i);
   }
-}
 
+  // 🔥 restore scroll position
+  setTimeout(() => {
+    window.scrollTo(0, scrollTop);
+  }, 100);
+}
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 

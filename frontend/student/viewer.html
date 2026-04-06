@@ -353,24 +353,23 @@
         return;
       }
 
-      // const loadingTask = pdfjsLib.getDocument({
-      //   url: `/api/pdf/stream/${pdfId}`,
-      //   httpHeaders: {
-      //     Authorization: `Bearer ${localStorage.getItem('token')}`
-      //   },
-      //   withCredentials: true
-      // });
-
-
       const token = localStorage.getItem("token");
-
       const loadingTask = pdfjsLib.getDocument({
-        url: `/api/pdf/stream/${pdfId}?token=${token}`
-      });
+        url: `/api/pdf/stream/${pdfId}?token=${token}`,
 
+        // 🔥 ADD THESE (VERY IMPORTANT)
+        disableStream: true,
+        disableAutoFetch: true
+      });
       // 🔥 ADD THIS LINE (VERY IMPORTANT)
-      pdfDoc = await loadingTask.promise;
-      console.log("PDF Loaded:", pdfDoc);
+      try {
+        pdfDoc = await loadingTask.promise;
+        console.log("✅ PDF Loaded:", pdfDoc);
+      } catch (error) {
+        console.error("❌ PDF Load Error:", error);
+        alert("PDF load failed ❌");
+      }
+      // console.log("PDF Loaded:", pdfDoc);
 
       await renderPage(currentPage);
 

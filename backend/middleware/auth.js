@@ -60,7 +60,7 @@ if (req.query.token) {
 
     // 7. Device restriction: verify request comes from registered device
     const requestDeviceId = req.headers['x-device-id'];
-    if (user.role === 'student' && user.deviceId && requestDeviceId !== user.deviceId) {
+    if (user.role === 'student' && user.deviceId &&   requestDeviceId && requestDeviceId !== user.deviceId) {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. This account is registered to a different device.' 

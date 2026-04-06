@@ -340,6 +340,7 @@
 
     async function loadPDF() {
   const token = localStorage.getItem("token");
+  console.log("TOKEN:", token);
 
   try {
     const loadingTask = pdfjsLib.getDocument({

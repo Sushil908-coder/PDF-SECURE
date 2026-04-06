@@ -19,8 +19,8 @@ const UPLOAD_DIR = path.join(__dirname, '../uploads');
  */
 const uploadPDF = async (req, res) => {
   try {
-    const file = req.file; 
-    
+    const file = req.file;
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
@@ -161,7 +161,7 @@ const togglePDF = async (req, res) => {
  * Streams the PDF file securely — never exposes the real file path.
  * Supports range requests for efficient PDF.js loading.
  */
- 
+
 const streamPDF = async (req, res) => {
   try {
     if (!req.params.id || req.params.id === "undefined") {
@@ -182,10 +182,15 @@ const streamPDF = async (req, res) => {
     const response = await axios({
       url: pdf.fileUrl,
       method: "GET",
-      responseType: "stream"
+      responseType: "stream",
+      headers: {
+        Range: req.headers.range || "bytes=0-"
+      }
     });
 
+    // 🔥 IMPORTANT HEADERS
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Content-Disposition", "inline");
 
     response.data.pipe(res);

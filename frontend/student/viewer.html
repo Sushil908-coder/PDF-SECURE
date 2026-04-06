@@ -327,119 +327,119 @@
     </div>
   </div>
 
-<div id="pdfContainer"></div>
+  <div id="pdfContainer"></div>
 
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
   <script>
-   const params = new URLSearchParams(window.location.search);
-const pdfId = params.get("id");
+    const params = new URLSearchParams(window.location.search);
+    const pdfId = params.get("id");
 
-let pdfDoc = null;
-let currentPage = 1;
+    let pdfDoc = null;
+    let currentPage = 1;
 
-async function loadPDF() {
-  const res = await fetch('/api/pdf/list', {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
+    async function loadPDF() {
+      const res = await fetch('/api/pdf/list', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-  const data = await res.json();
-  const pdf = data.pdfs.find(p => p._id === pdfId);
+      const data = await res.json();
+      const pdf = data.pdfs.find(p => p._id === pdfId);
 
-  if (!pdf) {
-    alert("PDF not found ❌");
-    return;
-  }
+      if (!pdf) {
+        alert("PDF not found ❌");
+        return;
+      }
 
-// const loadingTask = pdfjsLib.getDocument({
-//   url: `/api/pdf/stream/${pdfId}`,
-//   httpHeaders: {
-//     Authorization: `Bearer ${localStorage.getItem('token')}`
-//   },
-//   withCredentials: true
-// });
+      // const loadingTask = pdfjsLib.getDocument({
+      //   url: `/api/pdf/stream/${pdfId}`,
+      //   httpHeaders: {
+      //     Authorization: `Bearer ${localStorage.getItem('token')}`
+      //   },
+      //   withCredentials: true
+      // });
 
 
-const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
-const loadingTask = pdfjsLib.getDocument({
-  url: `/api/pdf/stream/${pdfId}?token=${token}`
-});
+      const loadingTask = pdfjsLib.getDocument({
+        url: `/api/pdf/stream/${pdfId}?token=${token}`
+      });
 
-// 🔥 ADD THIS LINE (VERY IMPORTANT)
-pdfDoc = await loadingTask.promise;
-console.log("PDF Loaded:", pdfDoc);
+      // 🔥 ADD THIS LINE (VERY IMPORTANT)
+      pdfDoc = await loadingTask.promise;
+      console.log("PDF Loaded:", pdfDoc);
 
-await renderPage(currentPage);
-
-}
-
-async function renderPage(pageNum) {
-  if (!pdfDoc) return;
-
-  const page = await pdfDoc.getPage(pageNum);
-
-  const container = document.getElementById("pdfContainer");
-
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
-  const scale = window.innerWidth < 600 ? 1 : 1.5;
-  const viewport = page.getViewport({ scale });
-
-  canvas.height = viewport.height;
-  canvas.width = viewport.width;
-
-  await page.render({
-    canvasContext: context,
-    viewport: viewport
-  }).promise;
-
-  container.appendChild(canvas);
-}
-
-// 🔥 LAZY LOAD (SCROLL)
-const container = document.getElementById("pdfContainer");
-
-container.addEventListener("scroll", async () => {
-  if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
-    if (pdfDoc && currentPage < pdfDoc.numPages) {
-      currentPage++;
       await renderPage(currentPage);
+
     }
-  }
-});
 
-loadPDF();
+    async function renderPage(pageNum) {
+      if (!pdfDoc) return;
+
+      const page = await pdfDoc.getPage(pageNum);
+
+      const container = document.getElementById("pdfContainer");
+      container.innerHTML = ""; // 🔥 important
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      const scale = window.innerWidth < 600 ? 0.6 : 1.2;
+      const viewport = page.getViewport({ scale });
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+
+      container.appendChild(canvas);
+    }
+
+    // 🔥 LAZY LOAD (SCROLL)
+    // const container = document.getElementById("pdfContainer");
+
+    // container.addEventListener("scroll", async () => {
+    //   if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) {
+    //     if (pdfDoc && currentPage < pdfDoc.numPages) {
+    //       currentPage++;
+    //       await renderPage(currentPage);
+    //     }
+    //   }
+    // });
+
+    loadPDF();
 
 
-// 🔥 Screenshot / tab switch detect
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    document.body.style.filter = "blur(20px)";
-  } else {
-    document.body.style.filter = "none";
-  }
-});
+    // 🔥 Screenshot / tab switch detect
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        document.body.style.filter = "blur(20px)";
+      } else {
+        document.body.style.filter = "none";
+      }
+    });
 
-setInterval(() => {
-  document.body.style.opacity = "0.97";
-  setTimeout(() => {
-    document.body.style.opacity = "1";
-  }, 100);
-}, 2000);
+    setInterval(() => {
+      document.body.style.opacity = "0.97";
+      setTimeout(() => {
+        document.body.style.opacity = "1";
+      }, 100);
+    }, 2000);
 
-document.addEventListener("touchstart", e => {
-  if (e.touches.length > 1) {
-    e.preventDefault();
-  }
-}, { passive: false });
+    document.addEventListener("touchstart", e => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
 
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
   </script>
 

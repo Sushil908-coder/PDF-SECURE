@@ -337,35 +337,36 @@
 
     let pdfDoc = null;
     let currentPage = 1;
+    let scale = 1;
 
     async function loadPDF() {
-  const token = localStorage.getItem("token");
-  console.log("TOKEN:", token);
+      const token = localStorage.getItem("token");
+      console.log("TOKEN:", token);
 
-  try {
-    const loadingTask = pdfjsLib.getDocument({
-      url: `/api/pdf/stream/${pdfId}?token=${token}`,
-      // disableStream: true,
-      // disableAutoFetch: true
-    });
+      try {
+        const loadingTask = pdfjsLib.getDocument({
+          url: `/api/pdf/stream/${pdfId}?token=${token}`,
+          // disableStream: true,
+          // disableAutoFetch: true
+        });
 
-    pdfDoc = await loadingTask.promise;
+        pdfDoc = await loadingTask.promise;
 
-    console.log("✅ PDF Loaded:", pdfDoc);
+        console.log("✅ PDF Loaded:", pdfDoc);
 
-    // 🔥 LOOP ALL PAGES (IMPORTANT)
-  const totalPages = pdfDoc.numPages;
+        // 🔥 LOOP ALL PAGES (IMPORTANT)
+        const totalPages = pdfDoc.numPages;
 
-// 🔥 Fast render (parallel)
-for (let i = 1; i <= totalPages; i++) {
-  renderPage(i); // await hata diya (FAST)
-}
+        // 🔥 Fast render (parallel)
+        for (let i = 1; i <= totalPages; i++) {
+          renderPage(i); // await hata diya (FAST)
+        }
 
-  } catch (error) {
-    console.error("❌ PDF Load Error:", error);
-    alert("PDF load failed ❌");
-  }
-}
+      } catch (error) {
+        console.error("❌ PDF Load Error:", error);
+        alert("PDF load failed ❌");
+      }
+    }
 
     async function renderPage(pageNum) {
       if (!pdfDoc) return;
@@ -373,15 +374,22 @@ for (let i = 1; i <= totalPages; i++) {
       const page = await pdfDoc.getPage(pageNum);
 
       const container = document.getElementById("pdfContainer");
-    
+
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
-      const scale = window.innerWidth < 600 ? 0.5 : 1;
-      const viewport = page.getViewport({ scale });
+      const scale = window.innerWidth < 600 ? 1 : 1.5;
+      const viewport = page.getViewport({ scale: scale });
 
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      const outputScale = window.devicePixelRatio || 1;
+
+      canvas.width = viewport.width * outputScale;
+      canvas.height = viewport.height * outputScale;
+
+      canvas.style.width = viewport.width + "px";
+      canvas.style.height = viewport.height + "px";
+
+      context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
 
       await page.render({
         canvasContext: context,

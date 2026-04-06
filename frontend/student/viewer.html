@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Viewing PDF — PDF Notes Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -359,7 +359,7 @@
 
         // 🔥 Fast render (parallel)
         for (let i = 1; i <= totalPages; i++) {
-          renderPage(i); // await hata diya (FAST)
+          await renderPage(i); // 🔥 ORDER FIX
         }
 
       } catch (error) {
@@ -426,10 +426,9 @@
     // }, { passive: false });
 
 
-    function changeZoom(value) {
+    async function changeZoom(value) {
   const container = document.getElementById("pdfContainer");
 
-  // 🔥 save scroll position
   const scrollTop = window.scrollY;
 
   scale += value;
@@ -443,10 +442,9 @@
   container.innerHTML = "";
 
   for (let i = 1; i <= pdfDoc.numPages; i++) {
-    renderPage(i);
+    await renderPage(i); // 🔥 ORDER FIX
   }
 
-  // 🔥 restore scroll position
   setTimeout(() => {
     window.scrollTo(0, scrollTop);
   }, 100);

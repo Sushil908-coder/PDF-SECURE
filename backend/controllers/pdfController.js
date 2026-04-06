@@ -161,8 +161,7 @@ const togglePDF = async (req, res) => {
  * Streams the PDF file securely — never exposes the real file path.
  * Supports range requests for efficient PDF.js loading.
  */
-const axios = require("axios"); // 🔥 file ke top me add karo (upar imports ke sath)
-
+ 
 const streamPDF = async (req, res) => {
   try {
     if (!req.params.id || req.params.id === "undefined") {

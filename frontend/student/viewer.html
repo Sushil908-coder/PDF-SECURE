@@ -339,32 +339,33 @@
     let currentPage = 1;
 
     async function loadPDF() {
-      const token = localStorage.getItem("token");
-      console.log("TOKEN:", token);
+  const token = localStorage.getItem("token");
+  console.log("TOKEN:", token);
 
-      try {
-        const loadingTask = pdfjsLib.getDocument({
-          url: `/api/pdf/stream/${pdfId}?token=${token}`,
-          disableStream: true,
-          disableAutoFetch: true
-        });
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      url: `/api/pdf/stream/${pdfId}?token=${token}`,
+      // disableStream: true,
+      // disableAutoFetch: true
+    });
 
-        pdfDoc = await loadingTask.promise;
+    pdfDoc = await loadingTask.promise;
 
-        console.log("✅ PDF Loaded:", pdfDoc);
+    console.log("✅ PDF Loaded:", pdfDoc);
 
-        // 🔥 TOTAL PAGES
-        const totalPages = pdfDoc.numPages;
+    // 🔥 LOOP ALL PAGES (IMPORTANT)
+  const totalPages = pdfDoc.numPages;
 
-        // 🔥 LOOP ALL PAGES (IMPORTANT)
-        currentPage = 1;
-        await renderPage(currentPage);
+// 🔥 Fast render (parallel)
+for (let i = 1; i <= totalPages; i++) {
+  renderPage(i); // await hata diya (FAST)
+}
 
-      } catch (error) {
-        console.error("❌ PDF Load Error:", error);
-        alert("PDF load failed ❌");
-      }
-    }
+  } catch (error) {
+    console.error("❌ PDF Load Error:", error);
+    alert("PDF load failed ❌");
+  }
+}
 
     async function renderPage(pageNum) {
       if (!pdfDoc) return;
@@ -372,11 +373,11 @@
       const page = await pdfDoc.getPage(pageNum);
 
       const container = document.getElementById("pdfContainer");
-
+    
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
-      const scale = window.innerWidth < 600 ? 0.6 : 1.2;
+      const scale = window.innerWidth < 600 ? 0.5 : 1;
       const viewport = page.getViewport({ scale });
 
       canvas.height = viewport.height;
@@ -389,6 +390,7 @@
 
       container.appendChild(canvas);
     }
+
 
     loadPDF();
 
@@ -418,23 +420,6 @@
 
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-
-    function changePage(direction) {
-      const newPage = currentPage + direction;
-
-      if (newPage < 1 || newPage > pdfDoc.numPages) return;
-
-      currentPage = newPage;
-      renderPage(currentPage);
-    }
-
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "PrintScreen") {
-        alert("Screenshot blocked ❌");
-      }
-    });
 
   </script>
 

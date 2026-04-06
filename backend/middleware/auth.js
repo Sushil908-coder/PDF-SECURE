@@ -85,6 +85,7 @@ if (req.query.token) {
 
     // Attach user to request
     req.user = user;
+    req.user.tokenId = decoded.tokenId;
     next();
 
   } catch (err) {

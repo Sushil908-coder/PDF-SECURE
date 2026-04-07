@@ -22,8 +22,8 @@ const API = {
 
     // If 401 - session expired or invalidated → redirect to login
     if (res.status === 401) {
-      API.logout();
-      return null;
+      console.warn("Unauthorized request");
+      return res;
     }
 
     return res;
@@ -77,7 +77,7 @@ const API = {
       fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     localStorage.removeItem('token');
     localStorage.removeItem('role');

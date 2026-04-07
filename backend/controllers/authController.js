@@ -33,17 +33,17 @@ const login = async (req, res) => {
 
     // ── Check approval status ─────────────────────────────────────────────────
     if (!user.isApproved) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Your account is pending admin approval. Please contact your administrator.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is pending admin approval. Please contact your administrator.'
       });
     }
 
     // ── Check blocked status ──────────────────────────────────────────────────
     if (user.isBlocked) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Your account has been blocked. Contact admin.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been blocked. Contact admin.'
       });
     }
 
@@ -64,57 +64,63 @@ const login = async (req, res) => {
           ip: req.ip,
           userAgent: req.headers['user-agent']
         });
-        return res.status(403).json({ 
-          success: false, 
-          message: 'This account is registered to another device. Contact your admin to reset your device.' 
+        return res.status(403).json({
+          success: false,
+          message: 'This account is registered to another device. Contact your admin to reset your device.'
         });
       }
     }
 
-// 🔥 ADMIN DEVICE LIMIT
-if (user.role === 'admin') {
-  const MAX_DEVICES = 2;
+    // 🔥 ADMIN DEVICE LIMIT
+    if (user.role === 'admin') {
+      const MAX_DEVICES = 2;
 
-  if (user.adminSessions && user.adminSessions.length >= MAX_DEVICES) {
-    return res.status(403).json({
-      success: false,
-      message: "Admin device limit reached ❌"
-    });
-  }
-}
+      if (!user.adminSessions) user.adminSessions = [];
 
+      if (user.adminSessions.length >= MAX_DEVICES) {
+        return res.status(403).json({
+          success: false,
+          message: "Admin device limit reached ❌"
+        });
+      }
+    }
+
+    // 🔥 SUPERADMIN → NO LIMIT (kuch nahi likhna)
     // ── Generate unique token ID (for single-session enforcement) ─────────────
     const tokenId = uuidv4();
 
     // ── Sign JWT ──────────────────────────────────────────────────────────────
     const token = jwt.sign(
-      { 
-        userId: user._id, 
-        role: user.role, 
-        tokenId 
+      {
+        userId: user._id,
+        role: user.role,
+        tokenId
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
 
     // ── Update user: bind device (if first login) + store session token ───────
-  const updateData = {
-  lastLogin: new Date(),
-  lastSeen: new Date()
-};
+    const updateData = {
+      lastLogin: new Date(),
+      lastSeen: new Date()
+    };
 
-// 🔥 ADMIN vs STUDENT LOGIC
-if (user.role === 'admin') {
-  updateData.$push = {
-    adminSessions: {
-      tokenId,
-      deviceId
+    // 🔥 ADMIN vs STUDENT LOGIC
+    if (user.role === 'admin') {
+      updateData.$push = {
+        adminSessions: {
+          tokenId,
+          deviceId
+        }
+      };
     }
-  };
-} else {
-  updateData.activeTokenId = tokenId;
-}
 
+    else if (user.role === 'student') {
+      updateData.activeTokenId = tokenId;
+    }
+
+    // 🔥 SUPERADMIN → kuch nahi (no session store)
     // Bind device on first successful login
     if (user.role === 'student' && !user.deviceId) {
       updateData.deviceId = deviceId;
@@ -158,15 +164,15 @@ if (user.role === 'admin') {
 const logout = async (req, res) => {
   try {
     // Clear the active token so no further requests can use it
-if (req.user.role === 'admin') {
-  await User.findByIdAndUpdate(req.user._id, {
-    $pull: {
-      adminSessions: { tokenId: req.user.tokenId }
+    if (req.user.role === 'admin') {
+      await User.findByIdAndUpdate(req.user._id, {
+        $pull: {
+          adminSessions: { tokenId: req.user.tokenId }
+        }
+      });
+    } else {
+      await User.findByIdAndUpdate(req.user._id, { activeTokenId: null });
     }
-  });
-} else {
-  await User.findByIdAndUpdate(req.user._id, { activeTokenId: null });
-}
 
     await AccessLog.create({
       user: req.user._id,

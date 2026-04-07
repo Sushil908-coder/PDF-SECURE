@@ -51,8 +51,8 @@ if (req.query.token) {
     }
 
     // 6. Single-session enforcement: check token ID matches stored active token
-  if (user.role === 'admin') {
-  const validSession = user.adminSessions.find(
+if (user.role === 'admin') {
+  const validSession = user.adminSessions?.find(
     s => s.tokenId === decoded.tokenId
   );
 
@@ -62,7 +62,9 @@ if (req.query.token) {
       message: 'Session invalid ❌'
     });
   }
-} else {
+}
+
+else if (user.role === 'student') {
   if (user.activeTokenId !== decoded.tokenId) {
     return res.status(401).json({
       success: false,
@@ -70,6 +72,8 @@ if (req.query.token) {
     });
   }
 }
+
+// 🔥 SUPERADMIN → NO CHECK
 
     // 7. Device restriction: verify request comes from registered device
     const requestDeviceId = req.headers['x-device-id'];

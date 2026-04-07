@@ -72,7 +72,9 @@ const userSchema = new mongoose.Schema({
 adminSessions: [
   {
     tokenId: String,
-    deviceId: String
+    deviceId: String,
+    deviceInfo: String,
+    loginTime: Date
   }
 ],
 

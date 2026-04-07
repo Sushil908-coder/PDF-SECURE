@@ -51,12 +51,19 @@ if (req.query.token) {
     }
 
     // 6. Single-session enforcement: check token ID matches stored active token
-if (user.role === 'admin' || user.role === 'superadmin') {
-  const validSession = user.adminSessions?.find(
+  if (user.role === 'admin') {
+  const validSession = user.adminSessions.find(
     s => s.tokenId === decoded.tokenId
   );
 
-  if (!validSession && user.role === 'admin') {
+  if (!validSession) {
+    return res.status(401).json({
+      success: false,
+      message: 'Session invalid ❌'
+    });
+  }
+} else {
+  if (user.activeTokenId !== decoded.tokenId) {
     return res.status(401).json({
       success: false,
       message: 'Session invalid ❌'
@@ -92,7 +99,7 @@ if (user.role === 'admin' || user.role === 'superadmin') {
  * Must be used after authenticate().
  */
 const requireAdmin = (req, res, next) => {
-if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'superadmin')) {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ success: false, message: 'Admin access required.' });
   }
   next();

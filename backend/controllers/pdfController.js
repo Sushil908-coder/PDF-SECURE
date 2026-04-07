@@ -25,7 +25,7 @@ const uploadPDF = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 
-    const { title, description, folder } = req.body;
+    const { title, description, category } = req.body;
 
     if (!title || !title.trim()) {
       fs.unlinkSync(req.file.path);
@@ -45,7 +45,7 @@ const uploadPDF = async (req, res) => {
     const pdf = await PDF.create({
       title: title.trim(),
       description: (description || '').trim(),
-      folder: folder,
+      category: (category || 'General').trim(),
       originalName: req.file.originalname,
       fileUrl: result.secure_url,
       public_id: result.public_id,

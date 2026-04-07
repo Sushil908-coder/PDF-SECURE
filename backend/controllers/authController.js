@@ -75,15 +75,13 @@ const login = async (req, res) => {
 if (user.role === 'admin') {
   const MAX_DEVICES = 2;
 
-  if (user.adminSessions.length >= MAX_DEVICES) {
+  if (user.adminSessions && user.adminSessions.length >= MAX_DEVICES) {
     return res.status(403).json({
       success: false,
       message: "Admin device limit reached ❌"
     });
   }
 }
-
-// 🔥 SUPER ADMIN → NO LIMIT
 
     // ── Generate unique token ID (for single-session enforcement) ─────────────
     const tokenId = uuidv4();

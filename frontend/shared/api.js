@@ -21,9 +21,10 @@ const API = {
     const res = await fetch(url, { ...options, headers });
 
     // If 401 - session expired or invalidated → redirect to login
-   if (res.status === 401) {
-  console.warn("Session issue, not logging out immediately");
-}
+    if (res.status === 401) {
+      API.logout();
+      return null;
+    }
 
     return res;
   },

@@ -46,11 +46,11 @@ public_id: {
   },
 
   // Category / Subject tag for organization
- folder: {
-  type: String,
-  required: true,
-  default: 'General'
-},
+  category: {
+    type: String,
+    trim: true,
+    default: 'General'
+  },
 
   // Which admin uploaded this
   uploadedBy: {

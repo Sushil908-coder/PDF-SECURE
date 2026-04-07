@@ -379,7 +379,7 @@
       const context = canvas.getContext("2d");
 
       // const scale = window.innerWidth < 600 ? 1 : 1.5;
-      const viewport = page.getViewport({ scale: scale });
+      const viewport = page.getViewport({ scale: scale, rotation: 90 });
 
       const outputScale = window.devicePixelRatio || 1;
 

@@ -31,11 +31,11 @@ const userSchema = new mongoose.Schema({
   },
 
   // User role: 'admin' or 'student'
-  role: {
-    type: String,
-    enum: ['admin', 'student'],
-    default: 'student'
-  },
+role: {
+  type: String,
+  enum: ['admin', 'superadmin', 'student'],
+  default: 'student'
+},
 
   // Admin must approve students before they can login
   isApproved: {

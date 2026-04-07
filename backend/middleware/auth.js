@@ -52,18 +52,22 @@ if (req.query.token) {
 
     // 6. Single-session enforcement: check token ID matches stored active token
 if (user.role === 'admin') {
-  const validSession = user.adminSessions?.find(
-    s => s.tokenId === decoded.tokenId
-  );
+  if (!user.adminSessions || user.adminSessions.length === 0) {
+    console.warn("No admin sessions found");
+  } else {
+    const validSession = user.adminSessions.find(
+      s => s.tokenId === decoded.tokenId
+    );
 
-  if (!validSession) {
-    return res.status(401).json({
-      success: false,
-      message: 'Session invalid ❌'
-    });
+    if (!validSession) {
+      console.warn("Token mismatch");
+      return res.status(401).json({
+        success: false,
+        message: 'Session invalid ❌'
+      });
+    }
   }
 }
-
 else if (user.role === 'student') {
   if (user.activeTokenId !== decoded.tokenId) {
     return res.status(401).json({

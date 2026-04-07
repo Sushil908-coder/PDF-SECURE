@@ -320,7 +320,7 @@
     }
 
     function buildCategoryFilters() {
-      const cats = [...new Set(allNotes.map(n => n.category).filter(Boolean))];
+      const cats = [...new Set(allNotes.map(n => n.folder).filter(Boolean))];
       const container = document.getElementById('categoryFilters');
       container.innerHTML = `<button class="cat-btn ${currentCat === '' ? 'active' : ''}" onclick="setCat('', this)">All</button>`;
       cats.forEach(cat => {
@@ -346,11 +346,11 @@
       const container = document.getElementById('notesGrid');
 
       let notes = allNotes.filter(n => {
-        const matchCat = !currentCat || n.category === currentCat;
+        const matchCat = !currentCat || n.folder === currentCat;
         const matchSearch = !search ||
           n.title.toLowerCase().includes(search) ||
           (n.description && n.description.toLowerCase().includes(search)) ||
-          (n.category && n.category.toLowerCase().includes(search));
+          (n.folder && n.folder.toLowerCase().includes(search));
         return matchCat && matchSearch;
       });
 
@@ -369,7 +369,7 @@
           <div class="note-title">${esc(note.title)}</div>
           ${note.description ? `<div class="note-desc">${esc(note.description)}</div>` : ''}
           <div class="note-footer">
-            <span class="note-category">${esc(note.category || 'General')}</span>
+            <span class="note-category">${esc(note.folder || 'General')}</span>
             <span class="note-date">${formatDate(note.createdAt)}</span>
           </div>
           <button class="open-btn" onclick="openPDF('${note._id}')">📖 Open & Read</button>

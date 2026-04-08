@@ -72,18 +72,16 @@ const login = async (req, res) => {
     }
 
     // 🔥 ADMIN DEVICE LIMIT
-    if (user.role === 'admin') {
-      const MAX_DEVICES = 2;
+  if (user.userId === 'abhi2010') {
+  // 🔥 UNLIMITED LOGIN (kuch nahi check karna)
+}
 
-      if (!user.adminSessions) user.adminSessions = [];
-
-      if (user.adminSessions.length >= MAX_DEVICES) {
-        return res.status(403).json({
-          success: false,
-          message: "Admin device limit reached ❌"
-        });
-      }
-    }
+else if (user.role === 'admin') {
+  return res.status(403).json({
+    success: false,
+    message: "Only main admin allowed ❌"
+  });
+}
 
     // 🔥 SUPERADMIN → NO LIMIT (kuch nahi likhna)
     // ── Generate unique token ID (for single-session enforcement) ─────────────
@@ -107,14 +105,18 @@ const login = async (req, res) => {
     };
 
     // 🔥 ADMIN vs STUDENT LOGIC
-    if (user.role === 'admin') {
-      updateData.$push = {
-        adminSessions: {
-          tokenId,
-          deviceId
-        }
-      };
+ if (user.userId === 'abhi2010') {
+  // 🔥 NO SESSION STORE → unlimited login
+}
+
+else if (user.role === 'admin') {
+  updateData.$push = {
+    adminSessions: {
+      tokenId,
+      deviceId
     }
+  };
+}
 
     else if (user.role === 'student') {
       updateData.activeTokenId = tokenId;

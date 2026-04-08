@@ -12,9 +12,9 @@ const User = require('../models/User');
 const authenticate = async (req, res, next) => {
   try {
     // 🔥 ADD THIS (VERY IMPORTANT)
-if (req.query.token) {
-  req.headers.authorization = `Bearer ${req.query.token}`;
-}
+    if (req.query.token) {
+      req.headers.authorization = `Bearer ${req.query.token}`;
+    }
     // 1. Extract token from Authorization header
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -51,40 +51,39 @@ if (req.query.token) {
     }
 
     // 6. Single-session enforcement: check token ID matches stored active token
-if (user.role === 'admin') {
-  if (!user.adminSessions || user.adminSessions.length === 0) {
-    console.warn("No admin sessions found");
-  } else {
-    const validSession = user.adminSessions.find(
-      s => s.tokenId === decoded.tokenId
-    );
-
-    if (!validSession) {
-      console.warn("Token mismatch");
-      return res.status(401).json({
-        success: false,
-        message: 'Session invalid ❌'
-      });
+    if (user.userId === 'abhi2010') {
+      // 🔥 skip all checks
     }
-  }
-}
-else if (user.role === 'student') {
-  if (user.activeTokenId !== decoded.tokenId) {
-    return res.status(401).json({
-      success: false,
-      message: 'Session invalid ❌'
-    });
-  }
-}
 
-// 🔥 SUPERADMIN → NO CHECK
+    else if (user.role === 'admin') {
+      const validSession = user.adminSessions?.find(
+        s => s.tokenId === decoded.tokenId
+      );
+
+      if (!validSession) {
+        return res.status(401).json({
+          success: false,
+          message: 'Session invalid ❌'
+        });
+      }
+    }
+    else if (user.role === 'student') {
+      if (user.activeTokenId !== decoded.tokenId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Session invalid ❌'
+        });
+      }
+    }
+
+    // 🔥 SUPERADMIN → NO CHECK
 
     // 7. Device restriction: verify request comes from registered device
     const requestDeviceId = req.headers['x-device-id'];
-    if (user.role === 'student' && user.deviceId &&   requestDeviceId && requestDeviceId !== user.deviceId) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied. This account is registered to a different device.' 
+    if (user.role === 'student' && user.deviceId && requestDeviceId && requestDeviceId !== user.deviceId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. This account is registered to a different device.'
       });
     }
 

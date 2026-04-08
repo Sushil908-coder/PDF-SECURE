@@ -332,6 +332,8 @@
   <script src="/shared/device.js"></script>
   <script src="/shared/api.js"></script>
   <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     const params = new URLSearchParams(window.location.search);
     const pdfId = params.get("id");
 
@@ -341,7 +343,7 @@
 
     async function loadPDF() {
       const token = localStorage.getItem("token");
-      console.log("TOKEN:", token);
+      // console.log("TOKEN:", token);
 
       try {
         const loadingTask = pdfjsLib.getDocument({
@@ -450,8 +452,8 @@
         window.scrollTo(0, scrollTop);
       }, 100);
     }
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    // pdfjsLib.GlobalWorkerOptions.workerSrc =
+    //   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
   </script>
 

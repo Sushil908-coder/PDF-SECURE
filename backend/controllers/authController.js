@@ -72,17 +72,23 @@ const login = async (req, res) => {
     }
 
     // 🔥 ADMIN DEVICE LIMIT
-if (user.userId === 'abhi2010') {
-  updateData.activeTokenId = tokenId; // 🔥 VERY IMPORTANT
-}
+    if (user.userId === 'abhi2010') {
+      updateData.activeTokenId = tokenId; // 🔥 VERY IMPORTANT
+    }
 
-else if (user.role === 'admin') {
-  // normal admin allowed (optional future use)
-}
+    else if (user.role === 'admin') {
+      // normal admin allowed (optional future use)
+    }
 
     // 🔥 SUPERADMIN → NO LIMIT (kuch nahi likhna)
     // ── Generate unique token ID (for single-session enforcement) ─────────────
     const tokenId = uuidv4();
+
+    const updateData = {
+      lastLogin: new Date(),
+      lastSeen: new Date()
+    };
+
 
     // ── Sign JWT ──────────────────────────────────────────────────────────────
     const token = jwt.sign(
@@ -96,39 +102,35 @@ else if (user.role === 'admin') {
     );
 
     // ── Update user: bind device (if first login) + store session token ───────
-    const updateData = {
-      lastLogin: new Date(),
-      lastSeen: new Date()
-    };
 
     // 🔥 ADMIN vs STUDENT LOGIC
- if (user.userId === 'abhi2010') {
-  // 🔥 NO SESSION STORE → unlimited login
-}
-
-else if (user.role === 'admin') {
-  updateData.$push = {
-    adminSessions: {
-      tokenId,
-      deviceId
+    if (user.userId === 'abhi2010') {
+      // 🔥 NO SESSION STORE → unlimited login
     }
-  };
-}
 
-if (user.userId === 'abhi2010') {
-  updateData.activeTokenId = tokenId; // unlimited but stable
-}
-else if (user.role === 'admin') {
-  updateData.$push = {
-    adminSessions: {
-      tokenId,
-      deviceId
+    else if (user.role === 'admin') {
+      updateData.$push = {
+        adminSessions: {
+          tokenId,
+          deviceId
+        }
+      };
     }
-  };
-}
-else if (user.role === 'student') {
-  updateData.activeTokenId = tokenId;
-}
+
+    if (user.userId === 'abhi2010') {
+      updateData.activeTokenId = tokenId; // unlimited but stable
+    }
+    else if (user.role === 'admin') {
+      updateData.$push = {
+        adminSessions: {
+          tokenId,
+          deviceId
+        }
+      };
+    }
+    else if (user.role === 'student') {
+      updateData.activeTokenId = tokenId;
+    }
 
     // 🔥 SUPERADMIN → kuch nahi (no session store)
     // Bind device on first successful login

@@ -71,14 +71,7 @@ const login = async (req, res) => {
       }
     }
 
-    // 🔥 ADMIN DEVICE LIMIT
-    if (user.userId === 'abhi2010') {
-      updateData.activeTokenId = tokenId; // 🔥 VERY IMPORTANT
-    }
-
-    else if (user.role === 'admin') {
-      // normal admin allowed (optional future use)
-    }
+   
 
     // 🔥 SUPERADMIN → NO LIMIT (kuch nahi likhna)
     // ── Generate unique token ID (for single-session enforcement) ─────────────
@@ -104,33 +97,20 @@ const login = async (req, res) => {
     // ── Update user: bind device (if first login) + store session token ───────
 
     // 🔥 ADMIN vs STUDENT LOGIC
-    if (user.userId === 'abhi2010') {
-      // 🔥 NO SESSION STORE → unlimited login
+    if (user.userId.toLowerCase() === 'abhi2010') {
+  updateData.activeTokenId = tokenId; // unlimited admin
+}
+else if (user.role === 'admin') {
+  updateData.$push = {
+    adminSessions: {
+      tokenId,
+      deviceId
     }
-
-    else if (user.role === 'admin') {
-      updateData.$push = {
-        adminSessions: {
-          tokenId,
-          deviceId
-        }
-      };
-    }
-
-    if (user.userId === 'abhi2010') {
-      updateData.activeTokenId = tokenId; // unlimited but stable
-    }
-    else if (user.role === 'admin') {
-      updateData.$push = {
-        adminSessions: {
-          tokenId,
-          deviceId
-        }
-      };
-    }
-    else if (user.role === 'student') {
-      updateData.activeTokenId = tokenId;
-    }
+  };
+}
+else if (user.role === 'student') {
+  updateData.activeTokenId = tokenId;
+}
 
     // 🔥 SUPERADMIN → kuch nahi (no session store)
     // Bind device on first successful login

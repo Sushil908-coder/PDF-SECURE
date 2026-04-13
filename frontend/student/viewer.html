@@ -343,6 +343,8 @@
     let scale = window.innerWidth < 600 ? 1.2 : 1.5;
 
     async function loadPDF() {
+      const token = localStorage.getItem("token");
+      console.log("TOKEN:", token);
       if (!token) {
         alert("Session expired ❌ Login again");
         window.location.href = "/";

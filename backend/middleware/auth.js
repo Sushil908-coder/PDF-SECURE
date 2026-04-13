@@ -68,7 +68,7 @@ const authenticate = async (req, res, next) => {
       }
     }
     else if (user.role === 'student') {
-      if (user.activeTokenId !== decoded.tokenId) {
+      if (user.activeTokenId && user.activeTokenId !== decoded.tokenId) {
         return res.status(401).json({
           success: false,
           message: 'Session invalid ❌'

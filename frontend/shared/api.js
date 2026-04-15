@@ -22,8 +22,11 @@ const API = {
 
     // If 401 - session expired or invalidated → redirect to login
     if (res.status === 401) {
-      console.warn("Unauthorized request");
-      return res;
+      alert("Session expired ❌ Please login again");
+
+      localStorage.clear();
+      window.location.href = "/";
+      return null;
     }
 
     return res;

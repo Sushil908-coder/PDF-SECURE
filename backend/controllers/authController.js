@@ -91,7 +91,7 @@ const login = async (req, res) => {
         tokenId
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     // ── Update user: bind device (if first login) + store session token ───────

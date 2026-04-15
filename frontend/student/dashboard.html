@@ -355,14 +355,30 @@
     async function loadNotes() {
       try {
         const res = await API.get('/api/pdf/list');
-        if (!res) return;
+
+        // 🔥 YE ADD KAR (IMPORTANT)
+        if (!res || res.status === 401) {
+          alert("Session expired ❌ Please login again");
+
+          localStorage.clear();
+          window.location.href = "/";
+          return;
+        }
+
         const data = await res.json();
-        if (!data.success) { showToast('Failed to load notes.', 'error'); return; }
+
+        if (!data.success) {
+          showToast('Failed to load notes.', 'error');
+          return;
+        }
 
         allNotes = data.pdfs;
         buildCategoryFilters();
         renderNotes();
-      } catch { showToast('Error loading notes.', 'error'); }
+
+      } catch {
+        showToast('Error loading notes.', 'error');
+      }
     }
 
     function buildCategoryFilters() {

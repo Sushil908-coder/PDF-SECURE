@@ -344,12 +344,15 @@
 
     async function loadPDF() {
       const token = localStorage.getItem("token");
-      console.log("TOKEN:", token);
+
       if (!token) {
-        alert("Session expired ❌ Login again");
+        alert("Session expired ❌ Please login again");
+        localStorage.clear();
         window.location.href = "/";
+        return; // 🔥 VERY IMPORTANT
       }
 
+      console.log("TOKEN:", token);
       try {
         const loadingTask = pdfjsLib.getDocument({
           url: `/api/pdf/stream/${pdfId}?token=${encodeURIComponent(token)}`,
@@ -371,7 +374,11 @@
 
       } catch (error) {
         console.error("❌ PDF Load Error:", error);
-        alert("PDF load failed ❌");
+
+        alert("Session expired ❌ Please login again");
+
+        localStorage.clear();
+        window.location.href = "/";
       }
     }
 
